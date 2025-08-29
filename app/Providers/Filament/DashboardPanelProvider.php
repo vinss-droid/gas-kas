@@ -6,9 +6,12 @@ use App\Filament\Widgets\CashFlowStatsWidget;
 use App\Filament\Widgets\IncomeChartWidget;
 use App\Filament\Widgets\IncomeTableWidget;
 use App\Filament\Widgets\OutcomeChartWidget;
+use App\Models\User;
 use App\Models\UserAllowed;
 use DutchCodingCompany\FilamentSocialite\FilamentSocialitePlugin;
 use DutchCodingCompany\FilamentSocialite\Provider;
+use Filament\Notifications\Notification;
+use Illuminate\Validation\ValidationException;
 use Laravel\Socialite\Contracts\User as SocialiteUserContract;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -71,27 +74,48 @@ class DashboardPanelProvider extends PanelProvider
             ])
             ->plugins([
                 FilamentSocialitePlugin::make()
-                ->registration(false)
-                ->domainAllowList(['localhost'])
-                ->resolveUserUsing(function (string $provider, SocialiteUserContract $oauthUser, FilamentSocialitePlugin $plugin) {
-                    $email = $oauthUser->getEmail();
+                    ->registration(true)
+                    ->resolveUserUsing(function (string $provider, SocialiteUserContract $oauthUser, FilamentSocialitePlugin $plugin) {
+                        // 1. Dapatkan email dari Google
+                        $email = $oauthUser->getEmail();
 
-                    $user = UserAllowed::where('email', $email)->first();
+                        // 2. Cek apakah email ini ada di daftar yang diizinkan
+                        $isAllowed = UserAllowed::where('email', $email)->exists();
 
-                    if (!$user) {
-                        return null;
-                    } else {
-                        return $user;
-                    }
-                })
-                ->providers([
-                   Provider::make('google')
-                    ->label('Google')
-                    ->icon('fab-google')
-                    ->with([
-                        'hd' => 'student.unsika.ac.id'
-                    ])
-                ]),
+                        // 3. Jika tidak diizinkan, HENTIKAN proses dengan Exception
+                        if (!$isAllowed) {
+                            // LANGKAH 1: Buat dan kirim notifikasi error.
+                            Notification::make()
+                                ->title('Login Gagal')
+                                ->danger() // Memberi warna merah pada notifikasi
+                                ->body('Email Anda tidak terdaftar dalam sistem. Silakan hubungi administrator.')
+                                ->send();
+
+                            // LANGKAH 2: Hentikan eksekusi dengan exception agar proses tidak lanjut.
+                            // Kita tetap menggunakan ValidationException karena ini cara yang 'aman'
+                            // untuk menghentikan proses tanpa menyebabkan error 500.
+                            throw ValidationException::withMessages([
+                                'email' => 'Akses ditolak.',
+                            ]);
+                        }
+
+                        // 4. Baris ini hanya akan tercapai jika user diizinkan
+                        return User::firstOrCreate(
+                            ['email' => $email],
+                            [
+                                'name' => $oauthUser->getName(),
+                                'email_verified_at' => now()
+                            ]
+                        );
+                    })
+                    ->providers([
+                        Provider::make('google')
+                            ->label('Google')
+                            ->icon('fab-google')
+                            ->with([
+                                'hd' => 'student.unsika.ac.id'
+                            ])
+                    ]),
             ]);
     }
 }
