@@ -2,6 +2,10 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Widgets\CashFlowStatsWidget;
+use App\Filament\Widgets\IncomeChartWidget;
+use App\Filament\Widgets\IncomeTableWidget;
+use App\Filament\Widgets\OutcomeChartWidget;
 use App\Models\UserAllowed;
 use DutchCodingCompany\FilamentSocialite\FilamentSocialitePlugin;
 use DutchCodingCompany\FilamentSocialite\Provider;
@@ -42,8 +46,10 @@ class DashboardPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
-                AccountWidget::class,
-                FilamentInfoWidget::class,
+//                CashFlowStatsWidget::class,
+//                IncomeChartWidget::class,
+//                OutcomeChartWidget::class,
+//                IncomeTableWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
