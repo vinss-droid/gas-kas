@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Filament\Resources\Weeks\Pages;
+namespace App\Filament\Resources\Outcomes\Pages;
 
-use App\Filament\Resources\Weeks\WeekResource;
+use App\Filament\Resources\Outcomes\OutcomeResource;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ManageRecords;
 
-class ManageWeeks extends ManageRecords
+class ManageOutcomes extends ManageRecords
 {
-    protected static string $resource = WeekResource::class;
+    protected static string $resource = OutcomeResource::class;
 
     protected function getHeaderActions(): array
     {

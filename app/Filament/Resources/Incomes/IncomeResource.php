@@ -10,12 +10,15 @@ use App\Models\PaymentMethod;
 use App\Models\User;
 use App\Models\Week;
 use BackedEnum;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Carbon;
 use UnitEnum;
@@ -32,27 +35,48 @@ class IncomeResource extends Resource
     protected static ?string $pluralLabel = 'Income';
     protected static string | UnitEnum | null $navigationGroup = 'Cash Flows';
 
+    private static $month = [
+        'Januari' => 'Januari',
+        'Februari' => 'Februari',
+        'Maret' => 'Maret',
+        'April' => 'April',
+        'Mei' => 'Mei',
+        'Juni' => 'Juni',
+        'Juli' => 'Juli',
+        'Agustus' => 'Agustus',
+        'September' => 'September',
+        'Oktober' => 'Oktober',
+        'November' => 'November',
+        'Desember' => 'Desember',
+    ];
+
     public static function form(Schema $schema): Schema
     {
         return $schema->schema([
-           Select::make('user_id')
+            Select::make('user_id')
                ->required()
                ->searchable()
                ->options(User::pluck('name', 'id'))
+                ->columnSpanFull()
                ->label('Yang Bayar'),
-            Select::make('week_id')
+            TextInput::make('year')
+                ->required()
+                ->default(now()->year),
+            Select::make('month')
+                ->required()
+                ->label('Bulan')
+                ->searchable()
+                ->options(self::$month),
+            Select::make('week')
                 ->required()
                 ->label('Minggu Ke')
                 ->searchable()
-                ->options(
-                    Week::all()->mapWithKeys(function ($week) {
-                        return [
-                            $week->id => Carbon::parse($week->start_date)->format('d M Y') .
-                                ' - ' .
-                                Carbon::parse($week->end_date)->format('d M Y'),
-                        ];
-                    })
-                ),
+                ->options([
+                    1 => 1,
+                    2 => 2,
+                    3 => 3,
+                    4 => 4,
+                ]),
             Select::make('payment_method_id')
                 ->required()
                 ->label('Metode Pembayaran')
@@ -61,12 +85,11 @@ class IncomeResource extends Resource
             TextInput::make('amount')
                 ->required()
                 ->label('Jumlah Bayar')
+                ->default(5000)
                 ->numeric(),
             DatePicker::make('paid_at')
                 ->label('Dibayar pada')
-                ->required()
-                ->format('d M Y')
-                ->columnSpanFull()
+                ->required(),
         ]);
     }
 
@@ -74,14 +97,36 @@ class IncomeResource extends Resource
     {
         return $table->recordTitleAttribute('Orang')
             ->columns([
-
+                TextColumn::make('user.name')
+                    ->searchable()
+                    ->label('Yang Bayar'),
+                TextColumn::make('year')
+                    ->searchable()
+                    ->label('Tahun'),
+                TextColumn::make('month')
+                    ->searchable()
+                    ->label('Bulan'),
+                TextColumn::make('week')
+                    ->searchable()
+                    ->label('Minggu Ke'),
+                TextColumn::make('paymentMethod.name')
+                    ->label('Metode Pembayaran'),
+                TextColumn::make('amount')
+                    ->label('Jumlah Bayar'),
+                TextColumn::make('paid_at')
+                    ->date(format: 'Y-m-d')
+                    ->label('Dibayar Pada'),
+            ])
+            ->recordActions([
+                EditAction::make(),
+                DeleteAction::make(),
             ]);
     }
 
     public static function getRelations(): array
     {
         return [
-            RelationManagers\WeekRelationManager::class,
+
         ];
     }
 
@@ -89,8 +134,6 @@ class IncomeResource extends Resource
     {
         return [
             'index' => ListIncomes::route('/'),
-            'create' => CreateIncome::route('/create'),
-            'edit' => EditIncome::route('/{record}/edit'),
         ];
     }
 }

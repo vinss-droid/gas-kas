@@ -13,12 +13,15 @@ return new class extends Migration
     {
         Schema::create('incomes', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('week_id')->constrained('weeks')->onDelete('cascade');
+            $table->foreignId('user_id')
+                ->constrained('users')->onDelete('cascade');
             $table->foreignId('payment_method_id')
                 ->constrained('payment_methods')->onDelete('cascade');
+            $table->string('month');
+            $table->integer('week');
+            $table->integer('year');
             $table->bigInteger('amount');
-            $table->date('paid_at');
+            $table->dateTime('paid_at');
             $table->timestamps();
         });
     }
