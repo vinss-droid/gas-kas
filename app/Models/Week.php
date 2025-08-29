@@ -6,5 +6,5 @@ use Illuminate\Database\Eloquent\Model;
 
 class Week extends Model
 {
-    protected $fillable = ['start_date', 'end_date', 'week_number', 'month', 'year'];
+    protected $fillable = ['week_number', 'month'];
 }
